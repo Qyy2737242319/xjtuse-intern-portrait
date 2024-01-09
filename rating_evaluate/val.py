@@ -5,8 +5,9 @@ import tqdm
 import pandas as pd
 import tqdm
 
-user_matrix = torch.tensor(np.load("./weights_save/user_matrix_latest.npy"), dtype=torch.float32).cuda()
-goods_matrix = torch.tensor(np.load("./weights_save/goods_matrix_latest.npy"), dtype=torch.float32).cuda()
+user_matrix = torch.tensor(np.load("./weights_matrix/user_matrix_latest.npy"), dtype=torch.float32).cuda()
+goods_matrix = torch.tensor(np.load("./weights_matrix/goods_matrix_latest.npy"), dtype=torch.float32).cuda()
+data = torch.Tensor(pd.read_csv("./data/ratings.csv").values[..., :-1]).permute(1, 0)
 
 
 def val(location):
@@ -19,28 +20,29 @@ def val(location):
 
 
 def test():
-    data = torch.Tensor(pd.read_csv("./data/ratings.csv").values[..., :-1]).permute(1, 0)
-    location = data[:2, :500000].permute(1, 0)
+    location = data[:2, 10000000:10500000].permute(1, 0)
     x = torch.dot(user_matrix[int(location[0, 0].item() - 1), ...],
                   goods_matrix[..., int(location[0, 1].item() - 1)]).unsqueeze(-1)
     for i in range(1, location.shape[0]):
         x = torch.concatenate((x, torch.dot(user_matrix[int(location[i, 0].item() - 1), ...],
                                             goods_matrix[..., int(location[i, 1].item() - 1)]).unsqueeze(-1)), dim=0)
     x = x.unsqueeze(dim=1)
-    true = data[[2], :500000].permute(1, 0)
+    true = data[[2], :500000].permute(1, 0).cuda()
     loss = 0
     for i in range(true.shape[0]):
-        loss += (torch.abs(true[i, 0] - x[i, 0] * 5) / true[i, 0]).item()
+        loss += (torch.abs(true[i, 0] - x[i, 0] * 5)).item()
     loss /= true.shape[0]
-    print("before revision accuracy: " + str(1 - loss))
+    print("before revision accuracy: " + str(loss))
     x = torch.clamp(torch.round(x * 5 * 2) / 2, 0, 5)
     loss = 0
+    sum = 0
     for i in range(true.shape[0]):
-        loss += (torch.abs(true[i, 0] - x[i, 0]) / true[i, 0]).item()
-    loss /= true.shape[0]
-    print("after revision accuracy: " + str(1 - loss))
+        sum += 1
+        if torch.equal(true[i, 0], x[i, 0]):
+            loss += 1
+    print("after revision accuracy: " + str(loss / sum))
 
 
-test()
-location = torch.tensor([[7044, 3995]], dtype=torch.int32).cuda()
-val(location)
+#test()
+# location = torch.tensor([[1147, 7043]], dtype=torch.int32).cuda()
+# val(location)
