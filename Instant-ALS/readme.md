@@ -39,7 +39,7 @@ pip install -r requirements.txt
 * We deployed parallel computation on 3 nvidia rtx4090 gpus for training and evaluating stages and 20 cpu cores for data loading, and the super parameters we used had set default in the scripts.
 * If you don't meet the requirements, you need to revise the code and some super parameters to enjoy the model.
 * In our experiments, Instant-ALS needs about 9hrs to reduce the loss to 0.1 and 15hrs to reach convergence.
-* During our experiments, we found that the super parameter k is proportional to the final accuracy, so increase the value of k as large as you can to have the maximum performance.
+* During our experiments, we found that the super parameter k is proportional to the final accuracy, so increase the value of k as large as you can to enjoy the maximum performance.
 
 ## Training Settings
 
