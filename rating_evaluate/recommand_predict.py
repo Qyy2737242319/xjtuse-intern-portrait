@@ -3,7 +3,9 @@ import pandas as pd
 import tqdm
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1024"
+
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
@@ -56,20 +58,56 @@ class Goods_space(nn.Module):
 
 class Instant_ALS_net(nn.Module):
 
-    def __init__(self, num_users, num_items, k, dev0, dev1):
+    def __init__(self, num_users, num_items, k, dev):
         super(Instant_ALS_net, self).__init__()
+        self.dev0 = dev[0]
+        self.dev1 = dev[1]
+        self.dev2 = dev[2]
+        self.k = k
+        self.encoder1 = nn.Embedding(num_users, k).to(self.dev0)
+        self.encoder2 = nn.Embedding(num_items, k).to(self.dev1)
+        self.net = nn.Sequential(
+            # nn.Conv1d(2, 4, 5, 1),
+            # nn.MaxPool1d(5, 2),
+            # nn.Conv1d(4, 6, 5, 1),
+            # nn.MaxPool1d(5, 2),
+            # nn.Flatten(),
+            nn.Linear(2 * k, 8000),
+            nn.ReLU(),
+            nn.Linear(8000, 4000),
+            nn.ReLU(),
+            nn.Linear(4000, 2000),
+            nn.ReLU(),
+            nn.Linear(2000, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 1)
+        ).to(self.dev2)
+
+    def forward(self, user, item):
+        user = user.to(self.dev0)
+        item = item.to(self.dev1)
+        user_latent = self.encoder1(user).reshape(-1, self.k).to(self.dev2)
+        item_latent = self.encoder2(item).reshape(-1, self.k).to(self.dev2)
+        latent = torch.cat([user_latent, item_latent], dim=1)
+        return self.net(latent)
+
+
+class Instant_ALS_light_net(nn.Module):
+
+    def __init__(self, num_users, num_items, k, dev0, dev1):
+        super(Instant_ALS_light_net, self).__init__()
         self.dev0 = dev0
         self.dev1 = dev1
         self.encoder1 = nn.Embedding(num_users, k).to(dev0)
         self.encoder2 = nn.Embedding(num_items, k).to(dev0)
         self.net = nn.Sequential(
-            nn.Linear(2 * k, 3000),
+            nn.Linear(2 * k, 500),
             nn.ReLU(),
-            nn.Linear(3000, 2000),
+            nn.Linear(500, 500),
             nn.ReLU(),
-            nn.Linear(2000, 2000),
+            nn.Linear(500, 500),
             nn.ReLU(),
-            nn.Linear(2000, 1),
+            nn.Linear(500, 1),
         ).to(dev1)
 
     def forward(self, user, item):
@@ -129,15 +167,14 @@ def setup(rank, world_size):
 
 def train(rank, world_size):
     setup(rank, world_size)
-    dev0 = rank * 2
-    dev1 = rank * 2 + 1
-
+    dev = [0, 1, 2]
     train_dataset = ALS_dataset('ALS_train.csv', './data/ratings.csv', "./data/genome-scores.csv")
-    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, 2000, dev0, dev1)
+    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
     ddp_model = DDP(model)
 
     if os.path.exists("./weights/model_latest.pt"):
         ddp_model.load_state_dict(torch.load("./weights/model_latest.pt"))
+        dist.barrier()
 
     loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
@@ -153,7 +190,8 @@ def train(rank, world_size):
     criterion2 = nn.L1Loss()
     criterion3 = nn.CrossEntropyLoss()
     # model.cuda()
-
+    torch.cuda.empty_cache()
+    gc.collect()
     for epoch in range(args.epoch):
         for step, data in enumerate(tqdm.tqdm(loader)):
             step = step + args.resume + int(epoch * train_dataset.__len__() / args.batch_size)
@@ -162,10 +200,10 @@ def train(rank, world_size):
             # optimizer3.zero_grad()
             user_id, goods_id, ratings = data
             # tags = tags.cuda()
-            ratings = ratings.to(dev1)
+            ratings = ratings.to(dev[2])
             fake_data = ddp_model(user_id, goods_id)
             loss = 5 * (criterion(fake_data, ratings) + criterion2(fake_data, ratings))
-            #loss = criterion3(fake_data, ratings)
+            # loss = criterion3(fake_data, ratings)
             loss.backward()
             optimizer.step()
             # optimizer2.step()
@@ -178,6 +216,8 @@ def train(rank, world_size):
                 # print(model.encoder1.parameters())
 
             if step != 0 and step % args.save_iter == 0:
+                torch.cuda.empty_cache()
+                gc.collect()
                 # torch.save(model.state_dict(), f'./weights/model_latest.pt')
                 if rank == 0:
                     # All processes should see same parameters as they all start from same
@@ -185,52 +225,53 @@ def train(rank, world_size):
                     # Therefore, saving it in one process is sufficient.
                     torch.save(ddp_model.state_dict(), f'./weights/model_latest.pt')
                     dist.barrier()
-                    torch.cuda.empty_cache()
-                    gc.collect()
                     ddp_model.eval()
-                    evaluate(train_dataset, ddp_model, dev0, dev1)
+                    evaluate(train_dataset, ddp_model, dev)
                     ddp_model.train()
 
 
-def evaluate(train_dataset, model, dev0, dev1):
+def evaluate(train_dataset, model, dev):
     pass
     select = torch.randint(0, train_dataset.__len__(), [args.eval_num])
     eval_user_id = (train_dataset.rating_data[0, select] - 1).long().unsqueeze(dim=1)
     eval_goods_id = torch.LongTensor((train_dataset.rating_data[1, select] - 1).long().unsqueeze(dim=1))
-    rating = train_dataset.rating_data[2, select].unsqueeze(dim=1).to(dev1)
+    rating = train_dataset.rating_data[2, select].unsqueeze(dim=1).to(dev[2])
     # tags = train_dataset.tags_data
 
     # eval_input = torch.cat((eval_user_id, eval_goods_id), dim=1)
     fake_data = model(eval_user_id, eval_goods_id)
-    #fake_rating = torch.zeros((args.eval_num, 1)).to(dev1)
+    # fake_rating = torch.zeros((args.eval_num, 1)).to(dev1)
     # for i in range(args.eval_num):
     #     _, a = torch.topk(fake_data[i, ...], k=1)
     #     fake_rating[i, 0] = a * 0.5
     fake_rating = torch.clamp(torch.round(fake_data * 5 * 2) / 2, 0, 5)
     accurate = 0
+    blur_accurate = 0
     for i in tqdm.tqdm(range(fake_rating.shape[0]), desc="evaluating...", colour='red'):
+        if rating[i].item() - 0.5 <= fake_rating[i].item() <= rating[i].item() + 0.5:
+            blur_accurate += 1
         if torch.equal(fake_rating[i], rating[i]):
             accurate += 1
 
     print("accuracy: " + str(accurate / args.eval_num))
+    print("blur_accuracy: " + str(blur_accurate / args.eval_num))
 
 
 def test(rank, world_size):
     setup(rank, world_size)
-    dev0 = rank * 2
-    dev1 = rank * 2 + 1
+    dev = [0, 1, 2]
 
     train_dataset = ALS_dataset('ALS_train.csv', './data/ratings.csv', "./data/genome-scores.csv")
-    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, 2000, dev0, dev1)
+    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
     ddp_model = DDP(model)
-
     if os.path.exists("./weights/model_latest.pt"):
         ddp_model.load_state_dict(torch.load("./weights/model_latest.pt"))
-    user_id = torch.LongTensor([0 - 1]).to(dev0)
-    goods_id = torch.LongTensor([0 - 1]).to(dev0)
-    predict = ddp_model(user_id, goods_id).item()
-    print("the rating predicted for " + str(user_id.item()) + " and " + str(goods_id.item()) + "is " + str(
-        predict.item()))
+    ddp_model.eval()
+    user_id = torch.LongTensor([[6886 - 1]]).to(dev[0])
+    goods_id = torch.LongTensor([[8235 - 1]]).to(dev[1])
+    predict = ddp_model(user_id, goods_id)
+    predict = torch.clamp(torch.round(predict * 5 * 2) / 2, 0, 5)
+    print("the rating predicted for user_id:" + str(user_id) + " and goods_id" + str(goods_id) + "is " + str(predict))
 
 
 def run(demo_fn, world_size):
@@ -241,17 +282,19 @@ def run(demo_fn, world_size):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--batch_size", help="the batch size of training", default=100000, required=False)
+parser.add_argument("--batch_size", help="the batch size of training", default=131072, required=False)  # 131072
 parser.add_argument("--epoch", help="the epoch number of training", default=10000, required=False)
-parser.add_argument("--lr", help="the learning rate of training", default=0.00001, required=False)
+parser.add_argument("--lr", help="the learning rate of training", default=0.000005, required=False)
 parser.add_argument("--logs_iter", help="log after how many iterations", default=20, required=False)
-parser.add_argument("--save_iter", help="save after how many iterations", default=50, required=False)
-parser.add_argument("--resume", help="resume training from iteration number", default=0, required=False)
-parser.add_argument("--eval_num", help="evaluation number for each save iter", default=100000, required=False)
+parser.add_argument("--save_iter", help="save after how many iterations", default=100, required=False)
+parser.add_argument("--resume", help="resume training from iteration number", default=6901, required=False)
+parser.add_argument("--eval_num", help="evaluation number for each save iter", default=131072, required=False)
+parser.add_argument("--k", help="feature channel of embeddings", default=4200, required=False)
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
     n_gpus = torch.cuda.device_count()
     world_size = n_gpus // 2
     run(train, world_size)
-    # run(test, world_size)
+    #run(test, world_size)
