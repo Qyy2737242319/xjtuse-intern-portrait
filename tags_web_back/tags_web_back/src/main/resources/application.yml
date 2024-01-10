@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.52.206:3306/tags_dat?serverTimezone=GMT%2B8
+    username: root
+    password: admin
+  mvc:
+    view:
+      suffix: .html
+      prefix: /
+
+mybatis:
+  mapper-locations: classpath*:mapper/*Mapper.xml
