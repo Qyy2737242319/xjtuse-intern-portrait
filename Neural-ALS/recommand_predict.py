@@ -263,15 +263,15 @@ def evaluate(train_dataset, model, dev, writer, step):
 def test(rank, world_size):
     setup(rank, world_size)
     dev = [0, 1, 2]
-
+    test_data = torch.LongTensor(args.test_data)
     train_dataset = ALS_dataset('ALS_train.csv', './data/ratings.csv', "./data/genome-scores.csv")
     model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
     ddp_model = DDP(model)
     if os.path.exists("./weights/model_latest.pt"):
         ddp_model.load_state_dict(torch.load("./weights/model_latest.pt"))
     ddp_model.eval()
-    user_id = torch.LongTensor([[6886 - 1]]).to(dev[0])
-    goods_id = torch.LongTensor([[8235 - 1]]).to(dev[1])
+    user_id = torch.LongTensor(test_data[..., 0] - 1).to(dev[0])
+    goods_id = torch.LongTensor(test_data[..., 1] - 1).to(dev[1])
     predict = ddp_model(user_id, goods_id)
     predict = torch.clamp(torch.round(predict * 5 * 2) / 2, 0, 5)
     print("the rating predicted for user_id:" + str(user_id) + " and goods_id" + str(goods_id) + "is " + str(predict))
@@ -293,11 +293,14 @@ parser.add_argument("--save_iter", help="save after how many iterations", defaul
 parser.add_argument("--resume", help="resume training from iteration number", default=6901, required=False)
 parser.add_argument("--eval_num", help="evaluation number for each save iter", default=131072, required=False)
 parser.add_argument("--k", help="feature channel of embeddings", default=4200, required=False)
-
+parser.add_argument("--mode", help="train or test", default="test", required=False)
+parser.add_argument("--test_data", help="test data if mode is test", default=[[1, 2]], required=False)
 args = parser.parse_args()
 
 if __name__ == "__main__":
     n_gpus = torch.cuda.device_count()
     world_size = n_gpus // 2
-    run(train, world_size)
-    # run(test, world_size)
+    if args.mode == "train":
+        run(train, world_size)
+    else:
+        run(test, world_size)
