@@ -1,12 +1,6 @@
 <p align="center">
-    <a href="https://github.com/pytorch/pytorch">
+    <a href="https://github.com/Qyy2737242319/xjtuse-intern-portrait/edit/main/rating_evaluate">
       <img src="https://img.shields.io/badge/Instant--ALS-1.0.0-brightgreen" alt="instant-ALS">
-    </a>
-    <a href="https://github.com/ElemeFE/element">
-      <img src="https://img.shields.io/badge/element--plus-2.3.4-brightgreen" alt="element-plus">
-    </a>
-    <a href="#">
-        <img src="https://img.shields.io/github/stars/huccct/vue-admin">
     </a>
     <a href="#">
         <img src="https://img.shields.io/github/license/huccct/vue-admin">
