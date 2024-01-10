@@ -40,6 +40,7 @@ pip install -r requirements.txt
 * If you don't meet the requirements, you need to revise the code and some super parameters to enjoy the model.
 * In our experiments, Neural-ALS needs about 9hrs to reduce the loss to 0.1 and 15hrs to reach convergence.
 * During our experiments, we found that the super parameter k is proportional to the final accuracy, so increase the value of k as large as you can to enjoy the maximum performance.
+* We recommand lr to be 1e-5 during the first 4000 iter and 5*1e-6 for the rest part of training due to numerical stability of the loss function.
 
 ## Training Settings
 
