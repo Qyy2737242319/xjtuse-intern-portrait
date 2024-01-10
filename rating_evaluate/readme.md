@@ -7,6 +7,9 @@
     </a>
 </p>
 
+## Train Result
+
+<img src="./train_results/net_loss.png" width=auto height=250> </img>
 
 ## environment preparation
 
