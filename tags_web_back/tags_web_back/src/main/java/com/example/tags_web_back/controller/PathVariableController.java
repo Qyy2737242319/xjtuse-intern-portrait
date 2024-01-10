@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.tags_web_back.demos.web;
+package com.example.tags_web_back.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;

@@ -1,4 +1,4 @@
-/*
+package com.example.tags_web_back.controller;/*
  * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.tags_web_back.demos.web;
-
+import com.example.tags_web_back.model.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;

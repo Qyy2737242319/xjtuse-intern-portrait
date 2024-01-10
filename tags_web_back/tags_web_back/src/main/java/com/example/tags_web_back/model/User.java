@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.tags_web_back.demos.web;
+package com.example.tags_web_back.model;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
