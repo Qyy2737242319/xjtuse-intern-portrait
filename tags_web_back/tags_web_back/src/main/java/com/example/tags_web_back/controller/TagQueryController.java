@@ -1,6 +1,7 @@
 package com.example.tags_web_back.controller;
 
 import com.example.tags_web_back.config.ApiResponse;
+import com.example.tags_web_back.model.User_tags;
 import com.example.tags_web_back.service.TagQueryService;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ public class TagQueryController {
     @GetMapping ("api/tagquery/{tagid}")
     @ResponseBody
     public ApiResponse tagquery(@PathVariable int tagid) {
-        Optional<ArrayList<User>> user = tagQueryService.getUser(tagid);
+        ArrayList<Long> user = tagQueryService.getUser(tagid);
         return ApiResponse.ok(user);
     }
 }

@@ -9,13 +9,7 @@ import java.util.Optional;
 @Mapper
 public interface UserMapper {
     @Select({
-            "<script>",
-            "SELECT id, username, email FROM tbl_users WHERE id IN",
-            "<foreach item='userid' collection='userid' open='[' separator=',' close=']'>",
-            "#{userid}",
-            "</foreach>",
-            "</script>"
+            "SELECT id, username, email FROM tbl_users WHERE id IN (${ids})"
     })
-    Optional<ArrayList<User>> getUsers(Optional<ArrayList<Integer>> userid);
-
+    ArrayList<Long> getUsers(@Param("ids") String ids);
 }

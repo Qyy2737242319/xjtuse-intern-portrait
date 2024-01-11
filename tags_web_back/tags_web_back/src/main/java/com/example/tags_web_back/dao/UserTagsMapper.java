@@ -9,5 +9,5 @@ import java.util.Optional;
 @Mapper
 public interface UserTagsMapper {
     @Select("select userid from user_tags where tagsid = #{tagid}")
-    Optional<ArrayList<Integer>> getuser(@Param("tagid") int tagid);
+    ArrayList<Long> getuser(@Param("tagid") long tagid);
 }
