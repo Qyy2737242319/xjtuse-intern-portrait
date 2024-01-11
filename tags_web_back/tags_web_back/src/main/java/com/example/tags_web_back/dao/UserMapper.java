@@ -9,7 +9,7 @@ import java.util.Optional;
 @Mapper
 public interface UserMapper {
     @Select({
-            "SELECT id, username, email FROM tbl_users WHERE id IN (${ids})"
+            "SELECT id, username, email FROM tbl_users WHERE id IN (${useridstr})"
     })
-    ArrayList<Long> getUsers(@Param("ids") String ids);
+    ArrayList<User> getUsers(@Param("useridstr") String useridstr);
 }

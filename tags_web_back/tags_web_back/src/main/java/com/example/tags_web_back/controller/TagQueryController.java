@@ -20,7 +20,7 @@ public class TagQueryController {
     @GetMapping ("api/tagquery/{tagid}")
     @ResponseBody
     public ApiResponse tagquery(@PathVariable int tagid) {
-        ArrayList<Long> user = tagQueryService.getUser(tagid);
+        ArrayList<User> user = tagQueryService.getUser(tagid);
         return ApiResponse.ok(user);
     }
 }

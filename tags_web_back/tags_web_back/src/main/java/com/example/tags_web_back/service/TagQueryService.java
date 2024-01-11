@@ -8,5 +8,6 @@ import java.util.Optional;
 
 
 public interface TagQueryService {
-    ArrayList<Long> getUser(int tagid);
+//    ArrayList<Long> getUser(int tagid);
+    ArrayList<User> getUser(int tagid);
 }
