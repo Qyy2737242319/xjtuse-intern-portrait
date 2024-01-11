@@ -274,7 +274,8 @@ def test(rank, world_size):
     goods_id = torch.LongTensor(test_data[..., 1] - 1).to(dev[1])
     predict = ddp_model(user_id, goods_id)
     predict = torch.clamp(torch.round(predict * 5 * 2) / 2, 0, 5)
-    print("the rating predicted for user_id:" + str(user_id) + " and goods_id" + str(goods_id) + "is " + str(predict))
+    print(
+        "the rating predicted for user_id:" + str(user_id) + " and goods_id" + str(goods_id + 1) + "is " + str(predict))
 
 
 def run(demo_fn, world_size):
@@ -284,17 +285,67 @@ def run(demo_fn, world_size):
              join=True)
 
 
+def generate(rank, world_size):
+    setup(rank, world_size)
+    dev = [0, 1, 2]
+    train_dataset = ALS_dataset('ALS_train.csv', './data/ratings.csv', "./data/genome-scores.csv")
+    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
+    ddp_model = DDP(model)
+    if os.path.exists("./weights/model_latest.pt"):
+        ddp_model.load_state_dict(torch.load("./weights/model_latest.pt"))
+    ddp_model.eval()
+    user_id = torch.zeros([1000])
+    item_id = torch.zeros([1000])
+    for i in range(1000):
+        user_id[i] = i + 1
+        item_id[i] = i + 1
+
+    matrix = torch.zeros((1000000, 3))
+    compute = torch.zeros((1000, 1000))
+    for i in range(1000):
+        for j in range(1000):
+            matrix[i * 1000 + j, 0] = user_id[i]
+            matrix[i + 1000 * j, 1] = item_id[i]
+
+    for i in tqdm.tqdm(range(10)):
+        input = matrix[i * 100000:(i + 1) * 100000, :2]
+        user_id = (input[..., 0] - 1).long().to(dev[0])
+        item_id = (input[..., 1] - 1).long().to(dev[1])
+        output = ddp_model(user_id, item_id).squeeze().cpu().detach()
+        output = torch.clamp(torch.round(output * 5 * 2) / 2, 0, 5)
+        matrix[i * 100000:(i + 1) * 100000, 2] = output
+        compute[user_id, item_id] = output
+
+    average = torch.zeros([1000, 10])
+    for i in range(1000):
+        _, average[i, :] = torch.topk(compute[i, :], 10)
+    average = average + 1
+    result = torch.zeros((10000, 2))
+    for i in range(1000):
+        result[i * 10:(i + 1) * 10, 1] = average[i, :]
+        for j in range(10):
+            result[i * 10 + j, 0] = i + 1
+
+    # _, a = torch.topk(average, 10)
+
+    df2 = pd.DataFrame({'user_id': result[..., 0].numpy(), 'item_id': result[..., 1].numpy()})
+    print("writing...")
+    # df.to_csv('./data.csv', index=False)
+    df2.to_csv('./recommand.csv', index=False)
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", help="the batch size of training", default=131072, required=False)  # 131072
 parser.add_argument("--epoch", help="the epoch number of training", default=10000, required=False)
-parser.add_argument("--lr", help="the learning rate of training", default=0.000005, required=False)
+parser.add_argument("--lr", help="the learning rate of training", default=0.00001, required=False)
 parser.add_argument("--logs_iter", help="log after how many iterations", default=20, required=False)
 parser.add_argument("--save_iter", help="save after how many iterations", default=100, required=False)
-parser.add_argument("--resume", help="resume training from iteration number", default=6901, required=False)
+parser.add_argument("--resume", help="resume training from iteration number", default=10881, required=False)
 parser.add_argument("--eval_num", help="evaluation number for each save iter", default=131072, required=False)
 parser.add_argument("--k", help="feature channel of embeddings", default=4200, required=False)
-parser.add_argument("--mode", help="train or test", default="test", required=False)
-parser.add_argument("--test_data", help="test data if mode is test", default=[[1, 2]], required=False)
+parser.add_argument("--mode", help="train or test", default="generate", required=False)
+parser.add_argument("--test_data", help="test data if mode is test",
+                    default=[[6888, 20], [6888, 21], [6888, 22], [6888, 23], [6888, 24], [6888, 25]], required=False)
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -302,5 +353,7 @@ if __name__ == "__main__":
     world_size = n_gpus // 2
     if args.mode == "train":
         run(train, world_size)
-    else:
+    elif args.mode == "test":
         run(test, world_size)
+    else:
+        run(generate, world_size)
