@@ -183,7 +183,7 @@ def train(rank, world_size):
         num_workers=20)
     writter = SummaryWriter('./logs')
 
-    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=args.lr, weight_decay=args.regular)
     # optimizer2 = torch.optim.SparseAdam(model.encoder1.parameters(), lr=param.lr)
     # optimizer3 = torch.optim.SparseAdam(model.encoder2.parameters(), lr=param.lr)
     criterion = nn.MSELoss()
@@ -201,6 +201,8 @@ def train(rank, world_size):
             user_id, goods_id, ratings = data
             # tags = tags.cuda()
             ratings = ratings.to(dev[2])
+            # writter.add_graph(ddp_model, [user_id, goods_id])
+            # writter.flush()
             fake_data = ddp_model(user_id, goods_id)
             loss = 5 * (criterion(fake_data, ratings) + criterion2(fake_data, ratings))
             # loss = criterion3(fake_data, ratings)
@@ -338,12 +340,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", help="the batch size of training", default=131072, required=False)  # 131072
 parser.add_argument("--epoch", help="the epoch number of training", default=10000, required=False)
 parser.add_argument("--lr", help="the learning rate of training", default=0.00001, required=False)
+parser.add_argument("--regular", help="value of regularization factor", default=0.01, required=False)
 parser.add_argument("--logs_iter", help="log after how many iterations", default=20, required=False)
 parser.add_argument("--save_iter", help="save after how many iterations", default=100, required=False)
 parser.add_argument("--resume", help="resume training from iteration number", default=10881, required=False)
 parser.add_argument("--eval_num", help="evaluation number for each save iter", default=131072, required=False)
 parser.add_argument("--k", help="feature channel of embeddings", default=4200, required=False)
-parser.add_argument("--mode", help="train or test", default="generate", required=False)
+parser.add_argument("--mode", help="train or test", default="train", required=False)
 parser.add_argument("--test_data", help="test data if mode is test",
                     default=[[6888, 20], [6888, 21], [6888, 22], [6888, 23], [6888, 24], [6888, 25]], required=False)
 args = parser.parse_args()
