@@ -16,6 +16,8 @@ The algorithm shows great accuracy during training and we also provide a light n
 
 <img src="./train_results/net_loss.png" width=auto height=250> </img>
 
+<img src="./train_results/accuracy.png" width=auto height=250> </img>
+
 ## Quick Start
 
 To have a test of our model ability, run bash command like:
@@ -50,7 +52,7 @@ Train a Neural-ALS model via:
 python ./recommand_predict.py --mode train [optional: --k --batch_size --epoch --lr --log_iter --save_iter --resume]
 ```
 
-## Optional Tools
+## Additional Information
 we provide some useful tools for surveillance listed here.
 
 ### using tensorboard to supervise training data
@@ -63,3 +65,11 @@ tensorboard --logdir ./logs
 ```
 python ./tools/matloss.py ./logs
 ```
+
+### Model Structure
+
+<img src="./train_results/model_structure.png" width=auto height=800> </img>
+
+### Parallel Computation Ability
+
+<img src="./train_results/tpu_capability.png" width=auto height=300> </img>
