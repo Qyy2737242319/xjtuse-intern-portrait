@@ -1,6 +1,14 @@
 package com.example.tags_web_back.service;
 
+;
+
+import com.example.tags_web_back.dao.NeuralALSMapper;
+import com.example.tags_web_back.model.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -9,7 +17,7 @@ public class NeuralALSService {
 
     // 注入用户数据访问层接口，用于操作数据库
     @Autowired
-    private UserMapper userMapper;
+    private NeuralALSMapper userMapper;
 
     // 定义一个方法，用于根据参数查询用户和商品的数据
     public List<User> getUserData(int page, int size) {

@@ -1,11 +1,13 @@
 package com.example.tags_web_back.dao;
 
 import com.example.tags_web_back.model.Tags;
+import com.example.tags_web_back.model.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.ArrayList;
+import java.util.List;
 
 // 定义一个用户数据访问层接口，用于操作数据库
 @Mapper
