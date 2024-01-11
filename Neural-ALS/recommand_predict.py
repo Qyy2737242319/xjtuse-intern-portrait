@@ -233,7 +233,7 @@ def train(rank, world_size):
 
 
 def evaluate(train_dataset, model, dev, writer, step):
-    pass
+    #pass
     select = torch.randint(0, train_dataset.__len__(), [args.eval_num])
     eval_user_id = (train_dataset.rating_data[0, select] - 1).long().unsqueeze(dim=1)
     eval_goods_id = torch.LongTensor((train_dataset.rating_data[1, select] - 1).long().unsqueeze(dim=1))
