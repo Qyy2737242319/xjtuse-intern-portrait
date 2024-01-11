@@ -22,7 +22,7 @@ To have a test of our model ability, run bash command like:
 ```
 python ./recommand_predict.py --mode test --test_data [[1,1],[234,436],[4295,13895]]
 ```
-where test_data value should be replaced by batch of user_id and movies_id you interested in.
+where test_data value should be replaced by batches of user_id and movies_id you interested in.
 
 
 ## Environment Preparation
