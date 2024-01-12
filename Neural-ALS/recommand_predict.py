@@ -56,10 +56,10 @@ class Goods_space(nn.Module):
         return y
 
 
-class Instant_ALS_net(nn.Module):
+class Neural_ALS_net(nn.Module):
 
     def __init__(self, num_users, num_items, k, dev):
-        super(Instant_ALS_net, self).__init__()
+        super(Neural_ALS_net, self).__init__()
         self.dev0 = dev[0]
         self.dev1 = dev[1]
         self.dev2 = dev[2]
@@ -92,10 +92,10 @@ class Instant_ALS_net(nn.Module):
         return self.net(latent)
 
 
-class Instant_ALS_light_net(nn.Module):
+class Neural_ALS_light_net(nn.Module):
 
     def __init__(self, num_users, num_items, k, dev0, dev1):
-        super(Instant_ALS_light_net, self).__init__()
+        super(Neural_ALS_light_net, self).__init__()
         self.dev0 = dev0
         self.dev1 = dev1
         self.encoder1 = nn.Embedding(num_users, k).to(dev0)
@@ -169,7 +169,7 @@ def train(rank, world_size):
     setup(rank, world_size)
     dev = [0, 1, 2]
     train_dataset = ALS_dataset('ALS_train.csv', './data/ratings.csv', "./data/genome-scores.csv")
-    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
+    model = Neural_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
     ddp_model = DDP(model)
 
     if os.path.exists("./weights/model_latest.pt"):
@@ -267,7 +267,7 @@ def test(rank, world_size):
     dev = [0, 1, 2]
     test_data = torch.LongTensor(args.test_data)
     train_dataset = ALS_dataset('ALS_train.csv', './data/ratings.csv', "./data/genome-scores.csv")
-    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
+    model = Neural_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
     ddp_model = DDP(model)
     if os.path.exists("./weights/model_latest.pt"):
         ddp_model.load_state_dict(torch.load("./weights/model_latest.pt"))
@@ -291,7 +291,7 @@ def generate(rank, world_size):
     setup(rank, world_size)
     dev = [0, 1, 2]
     train_dataset = ALS_dataset('ALS_train.csv', './data/ratings.csv', "./data/genome-scores.csv")
-    model = Instant_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
+    model = Neural_ALS_net(train_dataset.user_num, train_dataset.goods_num, args.k, dev)
     ddp_model = DDP(model)
     if os.path.exists("./weights/model_latest.pt"):
         ddp_model.load_state_dict(torch.load("./weights/model_latest.pt"))
