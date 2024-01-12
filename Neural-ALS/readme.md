@@ -1,5 +1,6 @@
-
-<div align=center><img src="./train_results/logo.png" width=800 height=200> </img>
+<p align="center">
+    <img src="./train_results/logo.png" width=800 height=200>
+</p>
     
 <p align="center">
     <a href="https://github.com/Qyy2737242319/xjtuse-intern-portrait/edit/main/rating_evaluate">
