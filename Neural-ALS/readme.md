@@ -18,7 +18,7 @@ The algorithm shows great accuracy during training and we also provide a light n
 
 ## Train Result
 
-<img src="./train_results/net_loss.png" width=auto height=250> </img>
+<img src="./train_results/net_loss.png" width=auto height=325> </img>
 
 <img src="./train_results/accuracy.png" width=auto height=250> </img>
 
