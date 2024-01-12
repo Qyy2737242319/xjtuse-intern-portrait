@@ -1,3 +1,6 @@
+
+<div align=center><img src="./train_results/logo.png" width=800 height=200> </img>
+    
 <p align="center">
     <a href="https://github.com/Qyy2737242319/xjtuse-intern-portrait/edit/main/rating_evaluate">
       <img src="https://img.shields.io/badge/Neural--ALS-1.0.0-brightgreen" alt="neural-ALS">
