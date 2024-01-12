@@ -11,7 +11,7 @@
     </a>
 </p>
 
-This repository demonstrates Neural-ALS, an optimized ALS algorithm based on deep learning for the dataset [ml-25m](https://grouplens.org/datasets/movielens/25m/) which conotains about 25,000,000 ratings of various movies from different viewers.
+This repository demonstrates Neural-ALS, an optimized ALS algorithm based on deep learning for the dataset [ml-25m](https://grouplens.org/datasets/movielens/25m/) which conotains about 25,000,000 ratings of various items from different customers.
 
 The algorithm shows great accuracy during training and we also provide a light network for training speed accelaration and model testing, when accuracy still close to the main model.
 
